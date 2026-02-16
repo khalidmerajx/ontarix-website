@@ -1,0 +1,145 @@
+--- a/about.html
++++ b/about.html
+@@ -1,9 +1,9 @@
+-<!doctype html><html lang="en"><head><title>About \
+- Ontarix Solutions Ltd.</title> 
++<!doctype html><html lang="en"><head><!-- updated -->
++<title>About Ontarix Solutions Ltd. — Executive‑led Engineering & Consulting in Ontario</title> 
+  <meta charset="utf-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+  <meta name="theme-color" content="#0B2957" /> 
+- <meta name="description" content="Executive-led engineering design and consulting across Ontario. P.Eng.-stamped, permit-ready deliverables for residential, commercial, and industrial projects." /> 
++ <meta name="description" content="Ontarix Solutions Ltd. is a professional engineering and consulting firm in Ontario, delivering P.Eng‑stamped, permit‑ready designs and leadership‑level advisory for residential, commercial, and industrial projects." />  
+  <link rel="icon" href="/favicon.ico" /> 
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon_180x180.png" /> 
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon_32x32.png" /> 
+@@ -15,7 +15,11 @@
+  <meta property="og:image" content="/og_image_1200x630.png" /> 
+  <meta name="twitter:card" content="summary_large_image" /> 
+  <meta name="twitter:image" content="/twitter_image_1200x600.png" /> 
+- <link rel="stylesheet" href="/styles.css" /> 
++ <link rel="canonical" href="https://www.ontarix.ca/about.html" /> 
++<script type="application/ld+json">
++{"@context": "https://schema.org", "@type": "WebPage", "name": "About Ontarix Solutions Ltd.", "url": "https://www.ontarix.ca/about.html"}
++</script> 
++<link rel="stylesheet" href="/styles.css" /> 
+ </head><body><header class="site-header" role="banner"> 
+  <div class="header-inner"> 
+  <a class="brand" href="/" aria-label="Ontarix Solutions Ltd."> 
+--- a/capabilities.html
++++ b/capabilities.html
+@@ -1,9 +1,9 @@
+-<!doctype html><html lang="en"><head><title>Capabilities \
+- Ontarix Solutions Ltd.</title> 
++<!doctype html><html lang="en"><head><!-- updated -->
++<title>Capabilities — Ontarix Solutions Ltd. | P.Eng‑stamped Designs, Compliance & Advisory</title> 
+  <meta charset="utf-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+  <meta name="theme-color" content="#0B2957" /> 
+- <meta name="description" content="Executive-led engineering design and consulting across Ontario. P.Eng.-stamped, permit-ready deliverables for residential, commercial, and industrial projects." /> 
++ <meta name="description" content="Explore Ontarix’s capabilities: P.Eng‑stamped drawings, permit‑ready documentation, OBC/municipal compliance, advisory services, and stakeholder coordination across Ontario." />  
+  <link rel="icon" href="/favicon.ico" /> 
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon_180x180.png" /> 
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon_32x32.png" /> 
+@@ -15,7 +15,11 @@
+  <meta property="og:image" content="/og_image_1200x630.png" /> 
+  <meta name="twitter:card" content="summary_large_image" /> 
+  <meta name="twitter:image" content="/twitter_image_1200x600.png" /> 
+- <link rel="stylesheet" href="/styles.css" /> 
++ <link rel="canonical" href="https://www.ontarix.ca/capabilities.html" /> 
++<script type="application/ld+json">
++{"@context": "https://schema.org", "@type": "WebPage", "name": "Capabilities — Ontarix Solutions Ltd.", "url": "https://www.ontarix.ca/capabilities.html"}
++</script> 
++<link rel="stylesheet" href="/styles.css" /> 
+ </head><body><header class="site-header" role="banner"> 
+  <div class="header-inner"> 
+  <a class="brand" href="/" aria-label="Ontarix Solutions Ltd."> 
+--- a/404.html
++++ b/404.html
+@@ -1,5 +1,5 @@
+-<!doctype html><html lang="en"><head><title>Page Not Found \
+- Ontarix</title> 
++<!doctype html><html lang="en"><head><!-- updated -->
++<title>Page Not Found — Ontarix</title> 
+  <meta charset="utf-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+  <meta name="theme-color" content="#0B2957" /> 
+@@ -15,7 +15,8 @@
+  <meta property="og:image" content="/og_image_1200x630.png" /> 
+  <meta name="twitter:card" content="summary_large_image" /> 
+  <meta name="twitter:image" content="/twitter_image_1200x600.png" /> 
+- <link rel="stylesheet" href="/styles.css" /> 
++ <link rel="canonical" href="https://www.ontarix.ca/404.html" /> 
++<link rel="stylesheet" href="/styles.css" /> 
+ </head><body><header class="site-header" role="banner"> 
+  <div class="header-inner"> 
+  <a class="brand" href="/" aria-label="Ontarix Solutions Ltd."> 
+--- /dev/null
++++ b/functions/api/contact.js
+@@ -0,0 +1,40 @@
++import { Resend } from 'resend';
++
++export const onRequestPost = async ({ request, env }) => {
++  const form = await request.formData();
++
++  // Honeypot (optional)
++  if ((form.get('company') || '').toString().trim() !== '')
++    return new Response('Spam detected', { status: 400 });
++
++  // Cloudflare Turnstile verification (optional but recommended)
++  const token = form.get('cf-turnstile-response');
++  if (token) {
++    const verify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
++      method: 'POST',
++      body: new URLSearchParams({ secret: env.TURNSTILE_SECRET, response: token })
++    }).then(r => r.json());
++    if (!verify.success) return new Response('Turnstile verification failed', { status: 400 });
++  }
++
++  const name = (form.get('name') || '').toString().trim();
++  const email = (form.get('email') || '').toString().trim();
++  const message = (form.get('message') || '').toString().trim();
++  if (!name || !email || !message) return new Response('Missing fields', { status: 400 });
++
++  try {
++    const resend = new Resend(env.RESEND_API_KEY);
++    const { error } = await resend.emails.send({
++      from: 'webform@ontarix.ca',
++      to: ['info@ontarix.ca'],
++      reply_to: email,
++      subject: `ontarix.ca contact — ${name}`,
++      html: `<p><strong>From:</strong> ${name} &lt;${email}&gt;</p><p>${message.replace(/
++/g,'<br>')}</p>`
++    });
++    if (error) throw new Error(String(error));
++    return new Response('Thank you! Your message has been sent.', { status: 200 });
++  } catch (e) {
++    return new Response('Email sending failed', { status: 500 });
++  }
++};
+--- /dev/null
++++ b/README-ONTARIX-DEPLOY.md
+@@ -0,0 +1,23 @@
++# Ontarix — SEO & Contact Form Changes
++
++This patch adds:
++
++- Canonical URLs and JSON-LD to `about.html` and `capabilities.html`.
++- Canonical to `404.html`.
++- A Cloudflare Pages Function at `functions/api/contact.js` to handle form submissions and send email to `info@ontarix.ca` via Resend.
++
++## After merging
++
++1. **Cloudflare Pages → Settings → Environment variables (Production)**
++   - Add **Secret** `RESEND_API_KEY` (from Resend)
++   - Add **Secret** `TURNSTILE_SECRET` (from Cloudflare Turnstile, if you use the widget)
++
++2. **Resend**
++   - Add domain `ontarix.ca`, publish SPF/DKIM/DMARC DNS records in Cloudflare, and verify the domain.
++
++3. **Form markup**
++   - Ensure your form posts to `/api/contact` and includes fields `name`, `email`, `message`.
++   - (Recommended) Include the Turnstile widget and a hidden `company` honeypot field.
++
++4. **Google Search Console**
++   - Submit `https://www.ontarix.ca/sitemap.xml` and request indexing for key pages.
